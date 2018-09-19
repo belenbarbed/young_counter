@@ -1,18 +1,28 @@
-#include <SevSeg.h>
+// Button library: https://github.com/madleech/Button
+#include <Button.h>
+#include <EEPROM.h>
 
+// Digit-controlling pins
+// D3 D2 D1 D0
 #define D0 0
 #define D1 1
 #define D2 2
 #define D3 3
-#define PIN_D0 5
-#define PIN_D1 4
-//#define PIN_D2 3
-//#define PIN_D3 2
-//#define DIGITS 4
-//const int digits[DIGITS] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3 };
-#define DIGITS 2
-const int digits[DIGITS] = { PIN_D0, PIN_D1 };
+#define PIN_D0 2
+#define PIN_D1 3
+#define PIN_D2 4
+#define PIN_D3 5
+#define DIGITS 4
+const int digits[DIGITS] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3 };
 
+// 7-seg controlling pins:
+//     a
+//    ----
+//  f| g  | b
+//    ----
+//  e|    | c
+//    ----
+//     d
 #define A 0
 #define B 1
 #define C 2
@@ -20,49 +30,67 @@ const int digits[DIGITS] = { PIN_D0, PIN_D1 };
 #define E 4
 #define F 5
 #define G 6
-#define PIN_A 7
-#define PIN_B 8
-#define PIN_C 9
-#define PIN_D 10
-#define PIN_E 11
-#define PIN_F 12
-#define PIN_G 13
+#define PIN_A 6
+#define PIN_B 7
+#define PIN_C 8
+#define PIN_D 9
+#define PIN_E 10
+#define PIN_F 11
+#define PIN_G 12
 #define SEGS 7
 const int segs[SEGS] = { PIN_A, PIN_B, PIN_C, PIN_D, PIN_E, PIN_F, PIN_G };
 
+// Buttons
+#define PIN_COUNT A0
+#define PIN_RESET A1
+Button countButton(PIN_COUNT);
+Button resetButton(PIN_RESET);
+
+// Counter & EEPROM
+#define COUNT_ADDR 0
+int counter = 0;
+
 void setup() {
+    Serial.begin(9600);
+    countButton.begin();
+    resetButton.begin();
+
+    EEPROM.get(COUNT_ADDR, counter);
+
     for (int i = 0; i < DIGITS; i++) {
         pinMode(digits[i], OUTPUT);
     }
     for (int i = 0; i < SEGS; i++) {
         pinMode(segs[i], OUTPUT);
     }
-
     off();
 }
 
 void loop() {
-    for (int i = 0; i < 100; i++) {
-        time = millis();
-        while (millis() < (time+1000)) {
-            numbers(i);
-        }
+    if (countButton.pressed()) {
+        counter = counter + 1;
+        EEPROM.put(COUNT_ADDR, counter);
     }
+    if (resetButton.pressed()) {
+        counter = 0;
+        EEPROM.put(COUNT_ADDR, 0);
+    }
+    digitsController(counter);
 }
 
-void numbers(int number) {
+void digitsController(int number) {
     int val_D0 = number % 10;
-    int val_D1 = number % 100;
-    int val_D2 = number % 1000;
-    int val_D3 = number % 10000;
+    int val_D1 = (number % 100)/10;
+    int val_D2 = (number % 1000)/100;
+    int val_D3 = (number % 10000)/1000;
 
-    number(D0, val_D0);
-    number(D1, val_D1);
-    number(D2, val_D2);
-    number(D3, val_D3);
+    digitController(D0, val_D0);
+    digitController(D1, val_D1);
+    digitController(D2, val_D2);
+    digitController(D3, val_D3);
 }
 
-void number(int digit, int number) {
+void digitController(int digit, int number) {
     reset_digits();
     reset_segs();
     digitalWrite(digits[digit], HIGH);
@@ -80,7 +108,7 @@ void number(int digit, int number) {
         default: zero(digit); break;
     }
 
-    delay(5);
+    delay(3);
     reset_digits();
     reset_segs();
 }
