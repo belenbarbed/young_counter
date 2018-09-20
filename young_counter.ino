@@ -30,13 +30,13 @@ const int digits[DIGITS] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3 };
 #define E 4
 #define F 5
 #define G 6
-#define PIN_A 6
-#define PIN_B 7
+#define PIN_A 10
+#define PIN_B 9
 #define PIN_C 8
-#define PIN_D 9
-#define PIN_E 10
-#define PIN_F 11
-#define PIN_G 12
+#define PIN_D 7
+#define PIN_E 6
+#define PIN_F 12
+#define PIN_G 11
 #define SEGS 7
 const int segs[SEGS] = { PIN_A, PIN_B, PIN_C, PIN_D, PIN_E, PIN_F, PIN_G };
 
@@ -71,10 +71,11 @@ void loop() {
         counter = counter + 1;
         EEPROM.put(COUNT_ADDR, counter);
     }
-    if (resetButton.pressed()) {
+    if ((resetButton.pressed()) || (counter > 9999)) {
         counter = 0;
         EEPROM.put(COUNT_ADDR, 0);
     }
+
     digitsController(counter);
 }
 
