@@ -3,7 +3,7 @@
 #include <EEPROM.h>
 
 // Digit-controlling pins
-// D3 D2 D1 D0
+// D3 D2 : D1 D0
 #define D0 0
 #define D1 1
 #define D2 2
@@ -41,8 +41,8 @@ const int digits[DIGITS] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3 };
 const int segs[SEGS] = { PIN_A, PIN_B, PIN_C, PIN_D, PIN_E, PIN_F, PIN_G };
 
 // Buttons
-#define PIN_COUNT A0
-#define PIN_RESET A1
+#define PIN_COUNT A1
+#define PIN_RESET A0
 Button countButton(PIN_COUNT);
 Button resetButton(PIN_RESET);
 
@@ -55,8 +55,11 @@ void setup() {
     countButton.begin();
     resetButton.begin();
 
+    // Set counter value to start where it
+    // was before it turned off
     EEPROM.get(COUNT_ADDR, counter);
 
+    // Initialise pin outputs
     for (int i = 0; i < DIGITS; i++) {
         pinMode(digits[i], OUTPUT);
     }
@@ -92,8 +95,7 @@ void digitsController(int number) {
 }
 
 void digitController(int digit, int number) {
-    reset_digits();
-    reset_segs();
+    off();
     digitalWrite(digits[digit], HIGH);
 
     switch(number) {
@@ -109,9 +111,13 @@ void digitController(int digit, int number) {
         default: zero(digit); break;
     }
 
+    // Turn on LEDs for a short period of time
+    // then move on to next digit
+    // this way we control one digit at a time
+    // (can't do more) but on average all digits
+    // appear lit up
     delay(3);
-    reset_digits();
-    reset_segs();
+    off();
 }
 
 void zero(int digit) {
@@ -192,15 +198,9 @@ void on() {
     }
 }
 void off() {
-    reset_digits();
-    reset_segs();
-}
-void reset_digits() {
     for (int i = 0; i < DIGITS; i++) {
         digitalWrite(digits[i], LOW);
     }
-}
-void reset_segs() {
     for (int i = 0; i < SEGS; i++) {
         digitalWrite(segs[i], LOW);
     }
